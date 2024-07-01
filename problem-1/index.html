@@ -1,0 +1,166 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Management</title>
+    <style>
+        /* Add your CSS styling here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        form input, form button {
+            margin-right: 10px;
+        }
+
+        .country-list {
+            margin-bottom: 20px;
+        }
+
+        .bar-chart {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            border: 1px solid #ccc;
+        }
+
+        .bar {
+            flex: 1;
+            margin: 0 5px;
+            background: #414942;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            color: white;
+        }
+
+        .bar span {
+            margin-bottom: 5px;
+        }
+
+        .toggle {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1> country Management</h1>
+    <form id="countryForm">
+        <input type="hidden" id="countryId">
+        <input type="text" id="countryName" placeholder="Country Name" required>
+        <input type="number" id="population" placeholder="Population (1-10)" min="1" max="10" required>
+        <input type="number" id="carbonFootprint" placeholder="Carbon Footprint (1-10)" min="1" max="10" required>
+        <button type="submit">Add/Update  country</button>
+    </form>
+    <div class="country-list" id="countryList"></div>
+    <div class="toggle">
+        <label for="toggleData">Toggle Data: </label>
+        <select id="toggleData">
+            <option value="population">Population</option>
+            <option value="carbonFootprint">Carbon Footprint</option>
+        </select>
+    </div>
+    <div class="bar-chart" id="barChart"></div>
+    
+</body>
+<script>
+    
+
+
+    const form = document.getElementById('countryForm');
+    const countryList = document.getElementById('countryList');
+    const barChart = document.getElementById('barChart');
+    const toggleData = document.getElementById('toggleData');
+
+   
+    let Country = JSON.parse(localStorage.getItem('country')) || [];
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const  countryId = document.getElementById('countryId').value;
+        const  countryName = document.getElementById('countryName').value.trim();
+        const population = document.getElementById('population').value;
+        const carbonFootprint = document.getElementById('carbonFootprint').value;
+
+        if (! countryName || population < 1 || population > 10 || carbonFootprint < 1 || carbonFootprint > 10) {
+            alert('Please enter valid data.');
+            return;
+        }
+
+        if (countryId) {
+           
+            const index =  Country.findIndex( country =>  country.id ==  countryId);
+             Country[index] = { id:  countryId, name:  countryName, population, carbonFootprint };
+        } else {
+            
+            const newcountry = {
+                id: Date.now().toString(),
+                name:  countryName,
+                population,
+                carbonFootprint
+            };
+             Country.push(newcountry);
+        }
+
+        localStorage.setItem('country', JSON.stringify(Country));
+        form.reset();
+        displayCountry();
+        renderBarChart();
+    });
+
+     countryList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit')) {
+            const id = e.target.dataset.id;
+            const  country = Country.find( country =>  country.id == id);
+            document.getElementById('countryId').value =  country.id;
+            document.getElementById('countryName').value =  country.name;
+            document.getElementById('population').value =  country.population;
+            document.getElementById('carbonFootprint').value =  country.carbonFootprint;
+        } else if (e.target.classList.contains('delete')) {
+            const id = e.target.dataset.id;
+             Country =  Country.filter( country =>  country.id != id);
+            localStorage.setItem(' Country', JSON.stringify(Country));
+            displayCountry();
+            renderBarChart();
+        }
+    });
+
+    toggleData.addEventListener('change', renderBarChart);
+
+    function displayCountry() {
+         countryList.innerHTML = Country.map( country => `
+            <div>
+                <span>${ country.name} - Population: ${ country.population}, Carbon Footprint: ${ country.carbonFootprint}</span>
+                <button class="edit" data-id="${ country.id}">Edit</button>
+                <button class="delete" data-id="${ country.id}">Delete</button>
+            </div>
+        `).join('');
+    }
+
+    function renderBarChart() {
+        const dataType = toggleData.value;
+        barChart.innerHTML = '';
+        Country.forEach( country => {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${ country[dataType] * 30}px`;
+            bar.innerHTML = `<span>${ country[dataType]}</span>`;
+            barChart.appendChild(bar);
+        });
+    }
+
+    displayCountry();
+    renderBarChart();
+
+
+
+
+</script>
+</html>
